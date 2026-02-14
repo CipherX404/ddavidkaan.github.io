@@ -353,10 +353,12 @@ function aralikEkle() {
   const max = parseInt(document.getElementById('aralikMax').value);
   const sans = parseInt(document.getElementById('aralikSans').value);
   
-  if (min >= 0 && max <= 100 && min < max && sans >= 0 && sans <= 100) {
+  if (min >= 0 && max <= 100 && min <= max && sans >= 0 && sans <= 100) {
     yukselmeAraliklari.push({ min, max, sans });
     araliklariGuncelle();
     logToOutput(`Aralık eklendi: ${min}-${max} (${sans}%)`);
+  } else {
+    logToOutput('Hata: Min <= Max ve 0-100 arasında olmalı!');
   }
 }
 
