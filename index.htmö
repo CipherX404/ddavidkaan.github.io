@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Twitch Bot</title>
+  <style>
+    body { margin: 20px; background: #0e0e10; color: white; font-family: Arial; }
+    .container { display: flex; gap: 20px; }
+    .left-column { flex: 1; }
+    .right-column { width: 300px; }
+    
+    .accordion {
+      background: #18181b;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+      border: 1px solid #333;
+    }
+    
+    .accordion-header {
+      padding: 15px 20px;
+      background: #2d2d2d;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 16px;
+      font-weight: bold;
+    }
+    
+    .accordion-content {
+      padding: 20px;
+      display: block;
+    }
+    
+    .accordion-content.hidden {
+      display: none;
+    }
+    
+    .arrow {
+      font-size: 14px;
+    }
+    
+    #serverOutput { 
+      background: #1f1f23;
+      height: 250px;
+      padding: 12px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 12px;
+      border-radius: 5px;
+      margin: 10px 0;
+    }
+    
+    .status { 
+      background: #ff9800;
+      color: black;
+      padding: 8px;
+      border-radius: 5px;
+      margin: 10px 0;
+      text-align: center;
+      font-weight: bold;
+    }
+    
+    input, button { 
+      padding: 8px 12px;
+      border-radius: 5px;
+      border: none;
+      margin: 5px 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    
+    input {
+      background: #2d2d2d;
+      color: white;
+      border: 1px solid #444;
+    }
+    
+    button { 
+      background: #9146ff;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    
+    .aralik-item {
+      background: #2d2d2d;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-left: 4px solid #9146ff;
+    }
+    
+    .aralik-bilgi {
+      font-size: 14px;
+      flex: 1;
+    }
+    
+    .sil-btn {
+      background: #e91916;
+      color: white;
+      border: none;
+      padding: 5px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      margin-left: 10px;
+      width: auto;
+    }
+    
+    .sil-btn:hover {
+      background: #ff5252;
+    }
+    
+    .form-row {
+      display: flex;
+      gap: 10px;
+      margin: 10px 0;
+    }
+    
+    .form-row input {
+      flex: 1;
+    }
+    
+    .form-row button {
+      width: auto;
+      min-width: 80px;
+    }
+    
+    .komut-listesi {
+      font-size: 14px;
+      line-height: 1.8;
+    }
+    
+    .komut-listesi div {
+      padding: 5px 0;
+      border-bottom: 1px solid #333;
+    }
+    
+    /* ÇEKİLİŞ STİLLERİ */
+    .cekilis-controls {
+      display: flex;
+      gap: 10px;
+      margin: 15px 0;
+    }
+    
+    .cekilis-controls button {
+      flex: 1;
+    }
+    
+    .baslat-btn { background: #00b03c; }
+    .cek-btn { background: #9146ff; }
+    .bitir-btn { background: #e91916; }
+    
+    .baslat-btn:hover { background: #00a035; }
+    .cek-btn:hover { background: #7c3ae0; }
+    .bitir-btn:hover { background: #c41411; }
+    
+    .katilimci-list {
+      background: rgba(0,0,0,0.3);
+      padding: 10px;
+      border-radius: 5px;
+      max-height: 100px;
+      overflow-y: auto;
+      margin: 10px 0;
+      font-size: 13px;
+    }
+    
+    .kazananlar {
+      background: rgba(0, 176, 60, 0.2);
+      padding: 15px;
+      border-radius: 5px;
+      margin: 15px 0;
+      border-left: 4px solid #00b03c;
+      display: none;
+    }
+    
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="left-column">
+      <!-- PERF AYARLARI -->
+      <div class="accordion">
+        <div class="accordion-header" onclick="toggleAccordion('perf')">
+          <span>▼ Perf Ayarları</span>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="accordion-content" id="perf-content">
+          <div class="form-row">
+            <input type="number" id="aralikMin" placeholder="Min" min="0" max="100" value="94">
+            <input type="number" id="aralikMax" placeholder="Max" min="0" max="100" value="100">
+            <input type="number" id="aralikSans" placeholder="Şans %" min="0" max="100" value="10">
+            <button onclick="aralikEkle()">Ekle</button>
+          </div>
+          <div id="aralikListesi"></div>
+        </div>
+      </div>
+      
+      <!-- ÇEKİLİŞ -->
+      <div class="accordion">
+        <div class="accordion-header" onclick="toggleAccordion('cekilis')">
+          <span>▼ Çekiliş</span>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="accordion-content" id="cekilis-content">
+          <input type="text" id="cekilisKomut" placeholder="Komut adı (! olmadan)" value="cekilis">
+          <input type="number" id="kazananSayisi" placeholder="Kazanan sayısı" value="1" min="1" max="50">
+          
+          <div class="cekilis-controls">
+            <button class="baslat-btn" onclick="cekilisBaslat()" id="cekilisBaslatBtn">Başlat</button>
+            <button class="cek-btn" onclick="kisiCek()" id="kisiCekBtn" disabled>Kişi Çek</button>
+            <button class="bitir-btn" onclick="cekilisBitir()" id="cekilisBitirBtn" disabled>Bitir</button>
+          </div>
+          
+          <div>
+            <div style="font-size: 14px; margin: 10px 0;">
+              Durum: <span id="cekilisDurum" style="color: #ff9800;">Hazır</span>
+            </div>
+            <div style="font-size: 14px; margin: 5px 0;">
+              Katılımcı: <span id="katilimciSayisi" style="color: #9146ff;">0</span>
+            </div>
+            <div class="katilimci-list" id="katilimciListesi">Henüz katılımcı yok...</div>
+          </div>
+          
+          <div class="kazananlar" id="kazananlarDiv">
+            <div style="color: #00b03c; font-weight: bold; margin-bottom: 5px;">🏆 Kazananlar:</div>
+            <div id="kazananlarListesi"></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- LOG -->
+      <div class="accordion">
+        <div class="accordion-header" onclick="toggleAccordion('log')">
+          <span>▼ Log</span>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="accordion-content" id="log-content">
+          <div id="serverOutput"></div>
+          <div id="status" class="status">Bağlantı kuruluyor...</div>
+          <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <button onclick="baglantiTest()">Test</button>
+            <button onclick="perfTestiYap()" style="background:#00b03c;">Perf Test</button>
+            <button onclick="tumunuSil()" style="background:#666;">Temizle</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="right-column">
+      <!-- KANAL AYARLARI -->
+      <div class="accordion">
+        <div class="accordion-header" onclick="toggleAccordion('kanal')">
+          <span>▼ Kanal Ayarları</span>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="accordion-content" id="kanal-content">
+          <input type="text" id="channelInput" value="davidrisingg9" placeholder="Kanal adı">
+          <button onclick="kanalDegistir()">Kanal Değiştir</button>
+          <div style="margin-top: 10px; font-size: 14px;">
+            Aktif kanal: <span id="currentChannelDisplay" style="color: #9146ff;">#davidrisingg9</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- KOMUTLAR -->
+      <div class="accordion">
+        <div class="accordion-header" onclick="toggleAccordion('komutlar')">
+          <span>▼ Komutlar</span>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="accordion-content" id="komutlar-content">
+          <div class="komut-listesi">
+            <div>!perf - Perf testi</div>
+            <div>!dc - Discord linki</div>
+            <div>!yt - YouTube linki</div>
+            <div>!ref - Referans linki</div>
+            <div>!yardım - Tüm komutlar</div>
+            <div>!cekilis - Çekilişe katıl</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- COOLDOWN -->
+      <div class="accordion">
+        <div class="accordion-header" onclick="toggleAccordion('cooldown')">
+          <span>▼ Cooldown</span>
+          <span class="arrow">▼</span>
+        </div>
+        <div class="accordion-content" id="cooldown-content">
+          <input type="number" id="cooldownTime" value="30" min="5" max="300">
+          <div style="font-size: 14px; margin-top: 5px; color: #888;">
+            Cooldown süresi (saniye)
+          </div>
+          <button onclick="cooldownGuncelle()" style="margin-top: 10px;">Güncelle</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// DEĞİŞKENLER
+const oAuth = "oauth:ys8dumlz221s0ocalar8qhsdi2375x";
+const user = "cipherx404";
+let currentChannel = "davidrisingg9";
+let socket;
+let yukselmeAraliklari = [
+  { min: 95, max: 100, sans: 5 },
+  { min: 90, max: 94, sans: 10 },
+  { min: 80, max: 89, sans: 15 },
+  { min: 70, max: 79, sans: 20 },
+  { min: 0, max: 69, sans: 50 }
+];
+let cooldownSuresi = 30;
+let cooldowns = {};
+
+// ÇEKİLİŞ DEĞİŞKENLERİ
+let cekilisAktif = false;
+let cekilisKomutu = 'cekilis';
+let cekilisKatilimcilar = new Set();
+
+// ACCORDION
+function toggleAccordion(section) {
+  const content = document.getElementById(section + '-content');
+  const arrow = content.parentElement.querySelector('.arrow');
+  
+  content.classList.toggle('hidden');
+  arrow.textContent = content.classList.contains('hidden') ? '▶' : '▼';
+}
+
+// LOG
+function logToOutput(msg) {
+  const output = document.getElementById('serverOutput');
+  const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  output.innerHTML += `[${time}] ${msg}\n`;
+  output.scrollTop = output.scrollHeight;
+}
+
+// ARALIK İŞLEMLERİ
+function aralikEkle() {
+  const min = parseInt(document.getElementById('aralikMin').value);
+  const max = parseInt(document.getElementById('aralikMax').value);
+  const sans = parseInt(document.getElementById('aralikSans').value);
+  
+  if (min >= 0 && max <= 100 && min < max && sans >= 0 && sans <= 100) {
+    yukselmeAraliklari.push({ min, max, sans });
+    araliklariGuncelle();
+    logToOutput(`Aralık eklendi: ${min}-${max} (${sans}%)`);
+  }
+}
+
+function aralikSil(index) {
+  if (confirm('Bu aralığı silmek istediğinize emin misiniz?')) {
+    yukselmeAraliklari.splice(index, 1);
+    araliklariGuncelle();
+    logToOutput('Aralık silindi');
+  }
+}
+
+function tumunuSil() {
+  if (confirm('TÜM aralıkları silmek istediğinize emin misiniz?')) {
+    yukselmeAraliklari = [];
+    araliklariGuncelle();
+    logToOutput('Tüm aralıklar silindi');
+  }
+}
+
+function araliklariGuncelle() {
+  const liste = document.getElementById('aralikListesi');
+  liste.innerHTML = '';
+  
+  yukselmeAraliklari.forEach((aralik, index) => {
+    const div = document.createElement('div');
+    div.className = 'aralik-item';
+    div.innerHTML = `
+      <div class="aralik-bilgi">${aralik.min}-${aralik.max}: ${aralik.sans}%</div>
+      <button class="sil-btn" onclick="aralikSil(${index})">Sil</button>
+    `;
+    liste.appendChild(div);
+  });
+}
+
+// COOLDOWN
+function cooldownGuncelle() {
+  cooldownSuresi = parseInt(document.getElementById('cooldownTime').value) || 30;
+  logToOutput(`Cooldown güncellendi: ${cooldownSuresi}s`);
+}
+
+// PERF HESAPLAMA
+function hesaplaperf() {
+  const toplam = yukselmeAraliklari.reduce((sum, a) => sum + a.sans, 0);
+  if (toplam === 0) return Math.floor(Math.random() * 101);
+  
+  const random = Math.random() * toplam;
+  let cumulative = 0;
+  
+  for (const aralik of yukselmeAraliklari) {
+    cumulative += aralik.sans;
+    if (random < cumulative) {
+      return Math.floor(Math.random() * (aralik.max - aralik.min + 1)) + aralik.min;
+    }
+  }
+  return Math.floor(Math.random() * 101);
+}
+
+// ÇEKİLİŞ FONKSİYONLARI
+function cekilisBaslat() {
+  if (!socket || socket.readyState !== WebSocket.OPEN) {
+    alert('Önce kanala bağlanın!');
+    return;
+  }
+  
+  cekilisKomutu = document.getElementById('cekilisKomut').value.trim().toLowerCase();
+  if (!cekilisKomutu) {
+    alert('Komut adı girin!');
+    return;
+  }
+  
+  cekilisAktif = true;
+  cekilisKatilimcilar = new Set();
+  
+  document.getElementById('cekilisBaslatBtn').disabled = true;
+  document.getElementById('kisiCekBtn').disabled = false;
+  document.getElementById('cekilisBitirBtn').disabled = false;
+  document.getElementById('cekilisDurum').textContent = 'Aktif';
+  document.getElementById('cekilisDurum').style.color = '#00b03c';
+  document.getElementById('katilimciSayisi').textContent = '0';
+  document.getElementById('katilimciListesi').innerHTML = 'Henüz katılımcı yok...';
+  document.getElementById('kazananlarDiv').style.display = 'none';
+  
+  const response = `🎁 ÇEKİLİŞ BAŞLADI! Katılmak için !${cekilisKomutu} yazın!`;
+  socket.send(`PRIVMSG #${currentChannel} :${response}`);
+  logToOutput(`>>> ${response}`);
+}
+
+function kisiCek() {
+  if (!cekilisAktif || cekilisKatilimcilar.size === 0) return;
+  
+  const kazananSayisi = parseInt(document.getElementById('kazananSayisi').value) || 1;
+  const katilimcilar = Array.from(cekilisKatilimcilar);
+  const kazananlar = [];
+  const tempKatilimcilar = [...katilimcilar];
+  const secilecekSayi = Math.min(kazananSayisi, tempKatilimcilar.length);
+  
+  for (let i = 0; i < secilecekSayi; i++) {
+    const randomIndex = Math.floor(Math.random() * tempKatilimcilar.length);
+    kazananlar.push(tempKatilimcilar[randomIndex]);
+    tempKatilimcilar.splice(randomIndex, 1);
+  }
+  
+  document.getElementById('kazananlarDiv').style.display = 'block';
+  document.getElementById('kazananlarListesi').innerHTML = kazananlar.join(', ');
+  
+  const response = `🎲 ARADAN KAZANANLAR: ${kazananlar.join(', ')}! Çekiliş devam ediyor!`;
+  socket.send(`PRIVMSG #${currentChannel} :${response}`);
+  logToOutput(`>>> ${response}`);
+}
+
+function cekilisBitir() {
+  if (!cekilisAktif) return;
+  
+  const kazananSayisi = parseInt(document.getElementById('kazananSayisi').value) || 1;
+  const katilimcilar = Array.from(cekilisKatilimcilar);
+  
+  if (katilimcilar.length === 0) {
+    alert('Kimse katılmadı!');
+    return;
+  }
+  
+  const kazananlar = [];
+  const tempKatilimcilar = [...katilimcilar];
+  const secilecekSayi = Math.min(kazananSayisi, tempKatilimcilar.length);
+  
+  for (let i = 0; i < secilecekSayi; i++) {
+    const randomIndex = Math.floor(Math.random() * tempKatilimcilar.length);
+    kazananlar.push(tempKatilimcilar[randomIndex]);
+    tempKatilimcilar.splice(randomIndex, 1);
+  }
+  
+  cekilisAktif = false;
+  document.getElementById('cekilisBaslatBtn').disabled = false;
+  document.getElementById('kisiCekBtn').disabled = true;
+  document.getElementById('cekilisBitirBtn').disabled = true;
+  document.getElementById('cekilisDurum').textContent = 'Bitti';
+  document.getElementById('cekilisDurum').style.color = '#ff9800';
+  
+  document.getElementById('kazananlarDiv').style.display = 'block';
+  document.getElementById('kazananlarListesi').innerHTML = kazananlar.join(', ');
+  
+  const response = `🏆 ÇEKİLİŞ BİTTİ! ${katilimcilar.length} katılımcı. KAZANANLAR: ${kazananlar.join(', ')}`;
+  socket.send(`PRIVMSG #${currentChannel} :${response}`);
+  logToOutput(`>>> ${response}`);
+}
+
+function cekiliseKatil(username) {
+  if (!cekilisAktif || cekilisKatilimcilar.has(username)) return;
+  
+  cekilisKatilimcilar.add(username);
+  document.getElementById('katilimciSayisi').textContent = cekilisKatilimcilar.size;
+  document.getElementById('katilimciListesi').innerHTML = Array.from(cekilisKatilimcilar).join(', ');
+  logToOutput(`🎁 ${username} katıldı`);
+}
+
+// KANAL İŞLEMLERİ
+function updateChannelDisplay() {
+  document.getElementById('currentChannelDisplay').textContent = `#${currentChannel}`;
+  document.getElementById('channelInput').value = currentChannel;
+}
+
+function kanalDegistir() {
+  const newChannel = document.getElementById('channelInput').value.trim().toLowerCase();
+  if (!newChannel || newChannel === currentChannel) return;
+  
+  logToOutput(`Kanal değiştiriliyor: #${currentChannel} → #${newChannel}`);
+  
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.send(`PART #${currentChannel}`);
+  }
+  
+  currentChannel = newChannel;
+  updateChannelDisplay();
+  connectToTwitch();
+}
+
+// BAĞLANTI
+function connectToTwitch() {
+  try {
+    socket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+    
+    socket.addEventListener('open', () => {
+      socket.send(`PASS ${oAuth}`);
+      socket.send(`NICK ${user}`);
+      socket.send(`JOIN #${currentChannel}`);
+      document.getElementById('status').style.background = '#00b03c';
+      document.getElementById('status').textContent = '✅ Bağlantı kuruldu';
+      logToOutput('🤖 Twitch Perf Bot başlatılıyor...');
+      logToOutput('🎁 Çekiliş botu hazır!');
+    });
+
+    socket.addEventListener('message', (event) => {
+      const msg = event.data;
+      
+      if (msg.startsWith('PING')) {
+        socket.send('PONG');
+        return;
+      }
+      
+      if (msg.includes('PRIVMSG')) {
+        const match = msg.match(/:(.+)!.+@.+ PRIVMSG #(.+) :(.+)/);
+        if (match) {
+          const username = match[1];
+          const chatMsg = match[3].toLowerCase().trim();
+          
+          if (chatMsg === '!perf') {
+            const now = Date.now();
+            const lastUsed = cooldowns[username];
+            
+            // Eğer cooldown varsa sadece cooldown mesajı gönder
+            if (lastUsed && (now - lastUsed) < (cooldownSuresi * 1000)) {
+              const remaining = Math.ceil(((cooldownSuresi * 1000) - (now - lastUsed)) / 1000);
+              const response = `@${username} ❌ ${remaining}s cooldown!`;
+              socket.send(`PRIVMSG #${currentChannel} :${response}`);
+              logToOutput(`Cooldown: ${username} - ${remaining}s kaldı`);
+            } 
+            // Cooldown yoksa perf hesapla ve gönder
+            else {
+              // Yeni cooldown başlat
+              cooldowns[username] = now;
+              
+              const perf = hesaplaperf();
+              let response;
+              
+              if (perf >= 95) response = `@${username} 🌟💎 EFSANEVİ! ${perf}% çıktı! 🎊`;
+              else if (perf >= 90) response = `@${username} 🎉✨ EPİK! ${perf}% çıktı! 🔥`;
+              else if (perf >= 80) response = `@${username} 💜 NADİR! ${perf}% çıktı! 👏`;
+              else if (perf >= 70) response = `@${username} 💚 İYİ! ${perf}% çıktı! 👍`;
+              else response = `@${username} ⚪ ${perf}% çıktı. Tekrar dene! 🔄`;
+              
+              socket.send(`PRIVMSG #${currentChannel} :${response}`);
+              logToOutput(`Perf: ${perf}% (${username}) - Cooldown başladı: ${cooldownSuresi}s`);
+            }
+          }
+          
+          else if (chatMsg === '!dc') {
+            socket.send(`PRIVMSG #${currentChannel} :@${username} 💜 Discord: https://discord.gg/jf6cXAJFx5`);
+          }
+          
+          else if (chatMsg === '!yt') {
+            socket.send(`PRIVMSG #${currentChannel} :@${username} 🎬 YouTube: https://www.youtube.com/@davidkaan2246`);
+          }
+          
+          else if (chatMsg === '!ref') {
+            socket.send(`PRIVMSG #${currentChannel} :@${username} 🎁 BONUS: https://rising.merlis.eu/ref/david`);
+          }
+          
+          else if (chatMsg === '!yardım') {
+            socket.send(`PRIVMSG #${currentChannel} :@${username} 📋 Komutlar: !perf | !dc | !yt | !ref | !cekilis`);
+          }
+          
+          else if (cekilisAktif && (chatMsg === `!${cekilisKomutu}` || chatMsg.startsWith(`!${cekilisKomutu} `))) {
+            cekiliseKatil(username);
+          }
+        }
+      }
+    });
+
+    socket.addEventListener('error', () => {
+      document.getElementById('status').style.background = '#e91916';
+      document.getElementById('status').textContent = '❌ Bağlantı hatası';
+    });
+
+    socket.addEventListener('close', () => {
+      document.getElementById('status').style.background = '#ff9800';
+      document.getElementById('status').textContent = '⚠️ Yeniden bağlanıyor...';
+      setTimeout(connectToTwitch, 5000);
+    });
+
+  } catch (error) {
+    logToOutput(`Hata: ${error}`);
+  }
+}
+
+// TEST FONKSİYONLARI
+function baglantiTest() {
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    logToOutput('✓ Bağlantı aktif');
+  } else {
+    logToOutput('✗ Bağlantı kapalı');
+  }
+}
+
+function perfTestiYap() {
+  const perf = hesaplaperf();
+  logToOutput(`Test perf: ${perf}%`);
+}
+
+// BAŞLANGIÇ
+window.addEventListener('load', () => {
+  araliklariGuncelle();
+  connectToTwitch();
+});
+</script>
+</body>
+</html>
