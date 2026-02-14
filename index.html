@@ -564,34 +564,41 @@ function connectToTwitch() {
           const username = match[1];
           const chatMsg = match[3].toLowerCase().trim();
           
-          if (chatMsg === '!perf') {
-            const now = Date.now();
-            const lastUsed = cooldowns[username];
-            
-            // Eğer cooldown varsa sadece cooldown mesajı gönder
-            if (lastUsed && (now - lastUsed) < (cooldownSuresi * 1000)) {
-              const remaining = Math.ceil(((cooldownSuresi * 1000) - (now - lastUsed)) / 1000);
-              const response = `@${username} ❌ ${remaining}s cooldown!`;
-              socket.send(`PRIVMSG #${currentChannel} :${response}`);
-              logToOutput(`Cooldown: ${username} - ${remaining}s kaldı`);
-            } 
-            // Cooldown yoksa perf hesapla ve gönder
-            else {
-              // Yeni cooldown başlat
-              cooldowns[username] = now;
-              
-              const perf = hesaplaperf();
-              let response;
-              
-              if (perf >= 95) response = `@${username} 🌟💎 EFSANEVİ! ${perf}% çıktı! 🎊`;
-              else if (perf >= 90) response = `@${username} 🎉✨ EPİK! ${perf}% çıktı! 🔥`;
-              else if (perf >= 80) response = `@${username} 💜 NADİR! ${perf}% çıktı! 👏`;
-              else if (perf >= 70) response = `@${username} 💚 İYİ! ${perf}% çıktı! 👍`;
-              else response = `@${username} ⚪ ${perf}% çıktı. Tekrar dene! 🔄`;
-              
-              socket.send(`PRIVMSG #${currentChannel} :${response}`);
-              logToOutput(`Perf: ${perf}% (${username}) - Cooldown başladı: ${cooldownSuresi}s`);
-            }
+// !perf komutu kısmını bununla değiştir:
+if (chatMsg === '!perf') {
+  const now = Date.now();
+  const lastUsed = cooldowns[username];
+  
+  // Cooldown kontrolü
+  if (lastUsed) {
+    const gecenSure = now - lastUsed;
+    const cooldownMs = cooldownSuresi * 1000;
+    
+    if (gecenSure < cooldownMs) {
+      // Cooldown devam ediyor
+      const remaining = Math.ceil((cooldownMs - gecenSure) / 1000);
+      const response = `@${username} ❌ ${remaining}s cooldown!`;
+      socket.send(`PRIVMSG #${currentChannel} :${response}`);
+      logToOutput(`Cooldown: ${username} - ${remaining}s kaldı`);
+      return; // Burada bitir, devam etme!
+    }
+  }
+  
+  // Cooldown yok veya süresi geçmiş - perf hesapla ve gönder
+  cooldowns[username] = now; // Yeni zamanı kaydet
+  
+  const perf = hesaplaperf();
+  let response;
+  
+  if (perf >= 95) response = `@${username} 🌟💎 EFSANEVİ! ${perf}% çıktı! 🎊`;
+  else if (perf >= 90) response = `@${username} 🎉✨ EPİK! ${perf}% çıktı! 🔥`;
+  else if (perf >= 80) response = `@${username} 💜 NADİR! ${perf}% çıktı! 👏`;
+  else if (perf >= 70) response = `@${username} 💚 İYİ! ${perf}% çıktı! 👍`;
+  else response = `@${username} ⚪ ${perf}% çıktı. Tekrar dene! 🔄`;
+  
+  socket.send(`PRIVMSG #${currentChannel} :${response}`);
+  logToOutput(`Perf: ${perf}% (${username}) - Cooldown başladı: ${cooldownSuresi}s`);
+}
           }
           
           else if (chatMsg === '!dc') {
