@@ -193,7 +193,7 @@
       <!-- PERF AYARLARI -->
       <div class="accordion">
         <div class="accordion-header" onclick="toggleAccordion('perf')">
-          <span>Perf Ayarları</span>
+          <span>Perfs Ayarları</span>
           <span class="arrow">▼</span>
         </div>
         <div class="accordion-content" id="perf-content">
@@ -564,56 +564,60 @@ function connectToTwitch() {
           const username = match[1];
           const chatMsg = match[3].toLowerCase().trim();
           
-// !perf komutu kısmını bununla değiştir:
-if (chatMsg === '!perf') {
-  const now = Date.now();
-  const lastUsed = cooldowns[username];
-  
-  // Cooldown kontrolü
-  if (lastUsed) {
-    const gecenSure = now - lastUsed;
-    const cooldownMs = cooldownSuresi * 1000;
-    
-    if (gecenSure < cooldownMs) {
-      // Cooldown devam ediyor
-      const remaining = Math.ceil((cooldownMs - gecenSure) / 1000);
-      const response = `@${username} ❌ ${remaining}s cooldown!`;
-      socket.send(`PRIVMSG #${currentChannel} :${response}`);
-      logToOutput(`Cooldown: ${username} - ${remaining}s kaldı`);
-      return; // Burada bitir, devam etme!
-    }
-  }
-  
-  // Cooldown yok veya süresi geçmiş - perf hesapla ve gönder
-  cooldowns[username] = now; // Yeni zamanı kaydet
-  
-  const perf = hesaplaperf();
-  let response;
-  
-  if (perf >= 95) response = `@${username} 🌟💎 EFSANEVİ! ${perf}% çıktı! 🎊`;
-  else if (perf >= 90) response = `@${username} 🎉✨ EPİK! ${perf}% çıktı! 🔥`;
-  else if (perf >= 80) response = `@${username} 💜 NADİR! ${perf}% çıktı! 👏`;
-  else if (perf >= 70) response = `@${username} 💚 İYİ! ${perf}% çıktı! 👍`;
-  else response = `@${username} ⚪ ${perf}% çıktı. Tekrar dene! 🔄`;
-  
-  socket.send(`PRIVMSG #${currentChannel} :${response}`);
-  logToOutput(`Perf: ${perf}% (${username}) - Cooldown başladı: ${cooldownSuresi}s`);
-}
+          // !perf komutu
+          if (chatMsg === '!perf') {
+            const now = Date.now();
+            const lastUsed = cooldowns[username];
+            
+            // Cooldown kontrolü
+            if (lastUsed) {
+              const gecenSure = now - lastUsed;
+              const cooldownMs = cooldownSuresi * 1000;
+              
+              if (gecenSure < cooldownMs) {
+                // Cooldown devam ediyor
+                const remaining = Math.ceil((cooldownMs - gecenSure) / 1000);
+                const response = `@${username} ❌ ${remaining}s cooldown!`;
+                socket.send(`PRIVMSG #${currentChannel} :${response}`);
+                logToOutput(`Cooldown: ${username} - ${remaining}s kaldı`);
+                return; // Burada bitir, devam etme!
+              }
+            }
+            
+            // Cooldown yok veya süresi geçmiş - perf hesapla ve gönder
+            cooldowns[username] = now; // Yeni zamanı kaydet
+            
+            const perf = hesaplaperf();
+            let response;
+            
+            if (perf >= 95) response = `@${username} 🌟💎 EFSANEVİ! ${perf}% çıktı! 🎊`;
+            else if (perf >= 90) response = `@${username} 🎉✨ EPİK! ${perf}% çıktı! 🔥`;
+            else if (perf >= 80) response = `@${username} 💜 NADİR! ${perf}% çıktı! 👏`;
+            else if (perf >= 70) response = `@${username} 💚 İYİ! ${perf}% çıktı! 👍`;
+            else response = `@${username} ⚪ ${perf}% çıktı. Tekrar dene! 🔄`;
+            
+            socket.send(`PRIVMSG #${currentChannel} :${response}`);
+            logToOutput(`Perf: ${perf}% (${username}) - Cooldown başladı: ${cooldownSuresi}s`);
+          }
           
           else if (chatMsg === '!dc') {
             socket.send(`PRIVMSG #${currentChannel} :@${username} 💜 Discord: https://discord.gg/jf6cXAJFx5`);
+            logToOutput(`Discord linki gönderildi: ${username}`);
           }
           
           else if (chatMsg === '!yt') {
             socket.send(`PRIVMSG #${currentChannel} :@${username} 🎬 YouTube: https://www.youtube.com/@davidkaan2246`);
+            logToOutput(`YouTube linki gönderildi: ${username}`);
           }
           
           else if (chatMsg === '!ref') {
             socket.send(`PRIVMSG #${currentChannel} :@${username} 🎁 BONUS: https://rising.merlis.eu/ref/david`);
+            logToOutput(`Referans linki gönderildi: ${username}`);
           }
           
           else if (chatMsg === '!yardım') {
             socket.send(`PRIVMSG #${currentChannel} :@${username} 📋 Komutlar: !perf | !dc | !yt | !ref | !cekilis`);
+            logToOutput(`Yardım gönderildi: ${username}`);
           }
           
           else if (cekilisAktif && (chatMsg === `!${cekilisKomutu}` || chatMsg.startsWith(`!${cekilisKomutu} `))) {
