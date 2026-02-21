@@ -577,7 +577,7 @@ function connectToTwitch() {
               if (gecenSure < cooldownMs) {
                 // Cooldown devam ediyor
                 const remaining = Math.ceil((cooldownMs - gecenSure) / 1000);
-                const response = `@${username} ❌ ${remaining}s cooldown!`;
+                const response = ``;
                 socket.send(`PRIVMSG #${currentChannel} :${response}`);
                 logToOutput(`Cooldown: ${username} - ${remaining}s kaldı`);
                 return; // Burada bitir, devam etme!
